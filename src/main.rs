@@ -20,8 +20,8 @@ mod args;
 const MOVE_CORNER: &'static str = "\x1B[H";
 const CLS_COLOR: &'static str = "\x1B[0m";
 const CLS_SCREEN: &'static str = "\x1B[2J";
-const HIDE_CURSOR: &'static str = "\x1b[25l";
-const SHOW_CURSOR: &'static str = "\x1b[25h";
+const HIDE_CURSOR: &'static str = "\x1b[?25l";
+const SHOW_CURSOR: &'static str = "\x1b[?25h";
 
 struct StrFrame {
     pub raw_frame: Vec<String>,
@@ -78,11 +78,8 @@ fn render_frame(frame: Frame, desired_width: u32) -> StrFrame {
 
 fn finalize_frame(f: &mut StrFrame) {
     let mut final_frame = String::new();
-    for (i, line) in f.raw_frame.iter().enumerate() {
-        final_frame.push_str(&format!("{line}{CLS_COLOR}"));
-        if i < f.raw_frame.len() - 1 {
-            final_frame.push('\n');
-        }
+    for line in f.raw_frame.iter() {
+        final_frame.push_str(&format!("{line}{CLS_COLOR}\n"));
     }
     f.final_frame = Some(final_frame);
 }
@@ -114,7 +111,7 @@ fn main() {
     let _ = ctrlc::set_handler(|| {
         let mut out = stdout();
         let _ = out.write(CLS_SCREEN.as_bytes());
-        let _ = out.write(HIDE_CURSOR.as_bytes());
+        let _ = out.write(SHOW_CURSOR.as_bytes());
         let _ = out.flush();
         exit(0);
     });
