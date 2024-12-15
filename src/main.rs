@@ -3,7 +3,7 @@ use std::{
     io::{stdout, BufReader, Write},
     process::exit,
     thread::sleep,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use args::{DisplayArgs, DisplaySize};
@@ -106,10 +106,12 @@ fn display(mut str_frames: Vec<StrFrame>, loop_animation: bool) {
             if f.final_frame.is_none() {
                 finalize_frame(f);
             }
+            let start = Instant::now();
             let _ = out.write(MOVE_CORNER.as_bytes());
             let _ = out.write(f.final_frame.as_ref().unwrap().as_bytes());
             let _ = out.flush();
-            sleep(f.delay);
+            let end = Instant::now();
+            sleep(f.delay.saturating_sub(end - start));
         }
 
         if !loop_animation {
