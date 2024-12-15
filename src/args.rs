@@ -6,5 +6,10 @@ pub struct DisplayArgs {
     pub file: String,
 
     #[arg(short = 'W', long)]
-    pub width: u32
+    pub width: Option<u32>,
+}
+
+pub enum DisplaySize {
+    Width(u32),
+    Fill
 }

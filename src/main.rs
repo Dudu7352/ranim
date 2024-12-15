@@ -6,7 +6,7 @@ use std::{
     time::Duration,
 };
 
-use args::DisplayArgs;
+use args::{DisplayArgs, DisplaySize};
 use clap::Parser;
 use image::{
     buffer,
@@ -43,6 +43,17 @@ fn resize_to_width(frame: Frame, desired_width: u32) -> ImageBuffer<Rgba<u8>, Ve
     )
 }
 
+fn resize_to_terminal(frame: Frame, size: termsize::Size) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
+    let original_buffer = frame.buffer();
+
+    resize(
+        original_buffer,
+        size.cols.into(),
+        (size.rows - 1).into(),
+        FilterType::Lanczos3,
+    )
+}
+
 fn render_row(row: buffer::Pixels<'_, Rgba<u8>>) -> String {
     let mut last_pixel_opt = None;
     let mut line = String::with_capacity(row.len() as usize * 20);
@@ -61,12 +72,14 @@ fn render_row(row: buffer::Pixels<'_, Rgba<u8>>) -> String {
     line
 }
 
-fn render_frame(frame: Frame, desired_width: u32) -> StrFrame {
+fn render_frame(frame: Frame, desired_size: &DisplaySize) -> StrFrame {
     let (delay_num, delay_den) = frame.delay().numer_denom_ms();
     let delay = Duration::from_millis(delay_num as u64 / delay_den as u64);
 
-    let b = resize_to_width(frame, desired_width);
-
+    let b = match &desired_size {
+        DisplaySize::Width(desired_width) => resize_to_width(frame, *desired_width),
+        DisplaySize::Fill => resize_to_terminal(frame, termsize::get().unwrap()),
+    };
     let raw_frame: Vec<String> = b.rows().map(render_row).collect();
 
     StrFrame {
@@ -107,7 +120,12 @@ fn display(mut str_frames: Vec<StrFrame>, loop_animation: bool) {
 
 fn main() {
     let args = DisplayArgs::parse();
-
+    let desired_size = if let Some(desired_width) = args.width {
+        DisplaySize::Width(desired_width)
+    } else {
+        DisplaySize::Fill
+    };
+    
     let _ = ctrlc::set_handler(|| {
         let mut out = stdout();
         let _ = out.write(CLS_SCREEN.as_bytes());
@@ -120,7 +138,7 @@ fn main() {
     let decoder = GifDecoder::new(file_in).unwrap();
     let frames = decoder.into_frames();
     let generated: Vec<StrFrame> = frames
-        .map(|f| render_frame(f.unwrap(), args.width))
+        .map(|f| render_frame(f.unwrap(), &desired_size))
         .collect();
     display(generated, true);
 }
