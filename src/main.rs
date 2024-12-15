@@ -12,7 +12,7 @@ use image::{
     buffer,
     codecs::gif::GifDecoder,
     imageops::{resize, FilterType},
-    AnimationDecoder, Frame, ImageBuffer, Rgba,
+    AnimationDecoder, Frame, Rgba,
 };
 
 mod args;
@@ -27,31 +27,6 @@ struct StrFrame {
     pub raw_frame: Vec<String>,
     pub final_frame: Option<String>,
     pub delay: Duration,
-}
-
-fn resize_to_width(frame: Frame, desired_width: u32) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
-    let original_buffer = frame.buffer();
-
-    let desired_height = ((original_buffer.height() as f32 / original_buffer.width() as f32)
-        * desired_width as f32) as u32;
-
-    resize(
-        original_buffer,
-        desired_width * 2,
-        desired_height,
-        FilterType::Lanczos3,
-    )
-}
-
-fn resize_to_terminal(frame: Frame, size: termsize::Size) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
-    let original_buffer = frame.buffer();
-
-    resize(
-        original_buffer,
-        size.cols.into(),
-        (size.rows - 1).into(),
-        FilterType::Lanczos3,
-    )
 }
 
 fn render_row(row: buffer::Pixels<'_, Rgba<u8>>) -> String {
@@ -75,11 +50,26 @@ fn render_row(row: buffer::Pixels<'_, Rgba<u8>>) -> String {
 fn render_frame(frame: Frame, desired_size: &DisplaySize) -> StrFrame {
     let (delay_num, delay_den) = frame.delay().numer_denom_ms();
     let delay = Duration::from_millis(delay_num as u64 / delay_den as u64);
+    let original_buffer = frame.buffer();
 
-    let b = match &desired_size {
-        DisplaySize::Width(desired_width) => resize_to_width(frame, *desired_width),
-        DisplaySize::Fill => resize_to_terminal(frame, termsize::get().unwrap()),
+    let (new_w, new_h) = match &desired_size {
+        DisplaySize::Width(desired_width) => {
+            let desired_height = ((original_buffer.height() as f32 / original_buffer.width() as f32) * *desired_width as f32) as u32;
+            (*desired_width, desired_height)
+        },
+        DisplaySize::Fill => {
+            let s = termsize::get().unwrap();
+            (s.cols as u32, (s.rows - 1) as u32)
+        }
     };
+
+
+    let b = resize(
+        original_buffer,
+        new_w * 2,
+        new_h,
+        FilterType::Lanczos3,
+    );
     let raw_frame: Vec<String> = b.rows().map(render_row).collect();
 
     StrFrame {
@@ -118,6 +108,7 @@ fn display(mut str_frames: Vec<StrFrame>, loop_animation: bool) {
             break;
         }
     }
+    clean();
 }
 
 fn clean() {
@@ -126,7 +117,6 @@ fn clean() {
     let _ = out.write(SHOW_CURSOR.as_bytes());
     let _ = out.write(MOVE_CORNER.as_bytes());
     let _ = out.flush();
-    exit(0);
 }
 
 fn main() {
@@ -137,7 +127,10 @@ fn main() {
         DisplaySize::Fill
     };
 
-    let _ = ctrlc::set_handler(clean);
+    let _ = ctrlc::set_handler(|| {
+        clean();
+        exit(0);
+    });
 
     let file_in = BufReader::new(File::open(args.file).unwrap());
     let decoder = GifDecoder::new(file_in).unwrap();
@@ -146,5 +139,4 @@ fn main() {
         .map(|f| render_frame(f.unwrap(), &desired_size))
         .collect();
     display(generated, args.loop_animation);
-    clean();
 }
