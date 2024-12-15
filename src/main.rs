@@ -120,6 +120,15 @@ fn display(mut str_frames: Vec<StrFrame>, loop_animation: bool) {
     }
 }
 
+fn clean() {
+    let mut out = stdout();
+    let _ = out.write(CLS_SCREEN.as_bytes());
+    let _ = out.write(SHOW_CURSOR.as_bytes());
+    let _ = out.write(MOVE_CORNER.as_bytes());
+    let _ = out.flush();
+    exit(0);
+}
+
 fn main() {
     let args = DisplayArgs::parse();
     let desired_size = if let Some(desired_width) = args.width {
@@ -127,14 +136,8 @@ fn main() {
     } else {
         DisplaySize::Fill
     };
-    
-    let _ = ctrlc::set_handler(|| {
-        let mut out = stdout();
-        let _ = out.write(CLS_SCREEN.as_bytes());
-        let _ = out.write(SHOW_CURSOR.as_bytes());
-        let _ = out.flush();
-        exit(0);
-    });
+
+    let _ = ctrlc::set_handler(clean);
 
     let file_in = BufReader::new(File::open(args.file).unwrap());
     let decoder = GifDecoder::new(file_in).unwrap();
@@ -142,5 +145,6 @@ fn main() {
     let generated: Vec<StrFrame> = frames
         .map(|f| render_frame(f.unwrap(), &desired_size))
         .collect();
-    display(generated, true);
+    display(generated, args.loop_animation);
+    clean();
 }

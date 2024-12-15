@@ -7,6 +7,9 @@ pub struct DisplayArgs {
 
     #[arg(short = 'W', long)]
     pub width: Option<u32>,
+
+    #[arg(long = "loop", action)]
+    pub loop_animation: bool,
 }
 
 pub enum DisplaySize {
