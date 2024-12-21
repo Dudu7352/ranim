@@ -13,6 +13,10 @@ pub struct DisplayArgs {
     /// Loops animation infinitely, press Ctrl-C to escape
     #[arg(long = "loop")]
     pub loop_animation: bool,
+
+    /// Centers animation on terminal screen
+    #[arg(short, long)]
+    pub center: bool,
 }
 
 pub enum DisplaySize {

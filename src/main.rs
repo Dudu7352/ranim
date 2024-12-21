@@ -17,21 +17,24 @@ use image::{
 
 mod args;
 
-const MOVE_CORNER: &'static str = "\x1B[H";
-const CLS_COLOR: &'static str = "\x1B[0m";
-const CLS_SCREEN: &'static str = "\x1B[2J";
-const HIDE_CURSOR: &'static str = "\x1b[?25l";
-const SHOW_CURSOR: &'static str = "\x1b[?25h";
+const MOVE_CORNER: &str = "\x1B[H";
+const CLS_COLOR: &str = "\x1B[0m";
+const CLS_SCREEN: &str = "\x1B[2J";
+const HIDE_CURSOR: &str = "\x1b[?25l";
+const SHOW_CURSOR: &str = "\x1b[?25h";
 
 struct StrFrame {
     pub raw_frame: Vec<String>,
+    pub size: Vec2<usize>,
     pub final_frame: Option<String>,
     pub delay: Duration,
 }
 
+struct Vec2<T>(T, T);
+
 fn render_row(row: buffer::Pixels<'_, Rgba<u8>>) -> String {
     let mut last_pixel_opt = None;
-    let mut line = String::with_capacity(row.len() as usize * 20);
+    let mut line = String::with_capacity(row.len() * 20);
     for p in row {
         if let Some(last_pixel) = last_pixel_opt {
             if last_pixel == p {
@@ -65,48 +68,57 @@ fn render_frame(frame: Frame, desired_size: &DisplaySize) -> StrFrame {
         }
     };
 
-
-    let b = resize(
-        original_buffer,
-        new_w * 2,
-        new_h,
-        FilterType::Lanczos3,
-    );
+    let b = resize(original_buffer, new_w, new_h, FilterType::Lanczos3);
     let raw_frame: Vec<String> = b.rows().map(render_row).collect();
 
     StrFrame {
         raw_frame,
         final_frame: None,
+        size: Vec2(b.width() as usize, b.height() as usize),
         delay,
     }
 }
 
-fn finalize_frame(f: &mut StrFrame) {
+fn finalize_frame(f: &mut StrFrame, offset: &Vec2<usize>) {
     let mut final_frame = String::new();
-    for line in f.raw_frame.iter() {
-        final_frame.push_str(&format!("{line}{CLS_COLOR}\n"));
+    let (off_x, off_y) = (offset.0, offset.1);
+    for (i, line) in f.raw_frame.iter().enumerate() {
+        let line_pos = off_y + i;
+        let column_pos = off_x;
+        final_frame.push_str(&format!("\x1B[{line_pos};{column_pos}H{line}{CLS_COLOR}"));
     }
     f.final_frame = Some(final_frame);
 }
 
-fn display(mut str_frames: Vec<StrFrame>, loop_animation: bool) {
+fn display(mut str_frames: Vec<StrFrame>, args: &DisplayArgs) {
     let mut out = std::io::stdout();
     let _ = out.write(CLS_SCREEN.as_bytes());
     let _ = out.write(HIDE_CURSOR.as_bytes());
+    let mut offset = Vec2(0, 0);
+    if args.center {
+        if let Some(size) = termsize::get() {
+            let frame_w = str_frames[0].size.0;
+            let frame_h = str_frames[0].size.1;
+            offset = Vec2(
+                (size.cols as usize - frame_w) / 2,
+                (size.rows as usize - frame_h) / 2,
+            )
+        }
+    }
     loop {
         for f in &mut str_frames {
             if f.final_frame.is_none() {
-                finalize_frame(f);
+                finalize_frame(f, &offset);
             }
             let start = Instant::now();
-            let _ = out.write(MOVE_CORNER.as_bytes());
+            // let _ = out.write(MOVE_CORNER.as_bytes());
             let _ = out.write(f.final_frame.as_ref().unwrap().as_bytes());
             let _ = out.flush();
             let end = Instant::now();
             sleep(f.delay.saturating_sub(end - start));
         }
 
-        if !loop_animation {
+        if !args.loop_animation {
             break;
         }
     }
@@ -134,11 +146,11 @@ fn main() {
         exit(0);
     });
 
-    let file_in = BufReader::new(File::open(args.file).unwrap());
+    let file_in = BufReader::new(File::open(&args.file).unwrap());
     let decoder = GifDecoder::new(file_in).unwrap();
     let frames = decoder.into_frames();
     let generated: Vec<StrFrame> = frames
         .map(|f| render_frame(f.unwrap(), &desired_size))
         .collect();
-    display(generated, args.loop_animation);
+    display(generated, &args);
 }
