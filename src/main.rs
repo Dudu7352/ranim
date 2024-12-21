@@ -54,9 +54,11 @@ fn render_frame(frame: Frame, desired_size: &DisplaySize) -> StrFrame {
 
     let (new_w, new_h) = match &desired_size {
         DisplaySize::Width(desired_width) => {
-            let desired_height = ((original_buffer.height() as f32 / original_buffer.width() as f32) * *desired_width as f32) as u32;
-            (*desired_width, desired_height)
-        },
+            let desired_height = ((original_buffer.height() as f32
+                / original_buffer.width() as f32)
+                * *desired_width as f32) as u32;
+            (*desired_width * 2, desired_height)
+        }
         DisplaySize::Fill => {
             let s = termsize::get().unwrap();
             (s.cols as u32, (s.rows - 1) as u32)
