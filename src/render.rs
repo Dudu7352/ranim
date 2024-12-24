@@ -70,7 +70,7 @@ pub fn render_frame(frame: Frame, desired_size: &DisplaySize) -> StrFrame {
     let buffer = to_resized_buffer(frame, desired_size);
     let (width, height) = (buffer.width() as usize, buffer.height() as usize);
 
-    let mut result = Vec::with_capacity(width); // Preallocate string
+    let mut result = Vec::with_capacity(width);
     for y in (0..height).step_by(2) {
         result.push(render_line(&buffer, width, y, true));
     }
@@ -79,7 +79,6 @@ pub fn render_frame(frame: Frame, desired_size: &DisplaySize) -> StrFrame {
         result.push(render_line(&buffer, width, height - 1, false));
     }
 
-    // Reset colors at the end
     StrFrame {
         raw_frame: result,
         final_frame: None,
