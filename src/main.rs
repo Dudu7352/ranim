@@ -12,6 +12,7 @@ mod display;
 mod render;
 mod terminal_consts;
 mod types;
+
 fn main() {
     let args = DisplayArgs::parse();
     let desired_size = if let Some(desired_width) = args.width {
