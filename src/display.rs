@@ -42,7 +42,6 @@ pub fn display_anim(mut str_frames: Vec<StrFrame>, args: &DisplayArgs) {
                 finalize_frame(f, &offset);
             }
             let start = Instant::now();
-            // let _ = out.write(MOVE_CORNER.as_bytes());
             let _ = out.write(f.final_frame.as_ref().unwrap().as_bytes());
             let _ = out.flush();
             let end = Instant::now();
@@ -62,4 +61,37 @@ pub fn clean() {
     let _ = out.write(SHOW_CURSOR.as_bytes());
     let _ = out.write(MOVE_CORNER.as_bytes());
     let _ = out.flush();
+}
+
+#[cfg(test)]
+mod test {
+    use std::time::Duration;
+
+    use crate::types::StrFrame;
+
+    use super::finalize_frame;
+
+    #[test]
+    fn test_finalize_frame() {
+        let mut frame = StrFrame {
+            raw_frame: vec!["###".to_string(), "###".to_string(), "###".to_string()],
+            final_frame: None,
+            delay: Duration::ZERO,
+            size: (3, 3),
+        };
+
+        finalize_frame(&mut frame, &(6usize, 7usize));
+
+        let exp = [
+            "\x1B[7;6H###\x1B[0m",
+            "\x1B[8;6H###\x1B[0m",
+            "\x1B[9;6H###\x1B[0m",
+        ]
+        .join("");
+        assert_eq!(
+            frame.final_frame.unwrap(),
+            exp,
+            "Incorrect alignment of the final frame"
+        )
+    }
 }
