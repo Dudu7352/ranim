@@ -7,10 +7,10 @@ use std::{
 use crate::{
     args::DisplayArgs,
     terminal_consts::{CLS_COLOR, CLS_SCREEN, HIDE_CURSOR, MOVE_CORNER, SHOW_CURSOR},
-    types::{StrFrame, Vec2},
+    types::StrFrame,
 };
 
-fn finalize_frame(f: &mut StrFrame, offset: &Vec2<usize>) {
+fn finalize_frame(f: &mut StrFrame, offset: &(usize, usize)) {
     let mut final_frame = String::new();
     let (off_x, off_y) = (offset.0, offset.1);
     for (i, line) in f.raw_frame.iter().enumerate() {
@@ -25,12 +25,12 @@ pub fn display_anim(mut str_frames: Vec<StrFrame>, args: &DisplayArgs) {
     let mut out = std::io::stdout();
     let _ = out.write(CLS_SCREEN.as_bytes());
     let _ = out.write(HIDE_CURSOR.as_bytes());
-    let mut offset = Vec2(0, 0);
+    let mut offset = (0, 0);
     if args.center {
         if let Some(size) = termsize::get() {
             let frame_w = str_frames[0].size.0;
             let frame_h = str_frames[0].size.1;
-            offset = Vec2(
+            offset = (
                 (size.cols as usize - frame_w) / 2,
                 (size.rows as usize - frame_h) / 2,
             )
