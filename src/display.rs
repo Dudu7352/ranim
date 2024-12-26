@@ -25,14 +25,14 @@ pub fn display_anim(mut str_frames: Vec<StrFrame>, args: &DisplayArgs) {
     let mut out = std::io::stdout();
     let _ = out.write(CLS_SCREEN.as_bytes());
     let _ = out.write(HIDE_CURSOR.as_bytes());
-    let mut offset = (0, 0);
+    let mut offset = (1, 1);
     if args.center {
         if let Some(size) = termsize::get() {
             let frame_w = str_frames[0].size.0;
             let frame_h = str_frames[0].size.1;
             offset = (
-                (size.cols as usize - frame_w) / 2,
-                (size.rows as usize - frame_h) / 2,
+                (size.cols as usize - frame_w) / 2 + 1,
+                (size.rows as usize - frame_h) / 2 + 1,
             )
         }
     }
