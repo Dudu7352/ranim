@@ -54,7 +54,7 @@ pub fn to_resized_buffer(
         }
         DisplaySize::Fill => {
             let s = termsize::get().unwrap();
-            (s.cols as u32, (s.rows - 1) as u32)
+            (s.cols as u32, (s.rows * 2 - 1) as u32)
         }
     };
     resize(original_buffer, new_w, new_h, FilterType::Lanczos3)
