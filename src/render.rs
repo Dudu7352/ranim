@@ -40,10 +40,7 @@ pub fn render_line(
     line
 }
 
-fn to_resized_buffer(
-    frame: Frame,
-    desired_size: &DisplaySize,
-) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
+fn to_resized_buffer(frame: Frame, desired_size: &DisplaySize) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
     let original_buffer = frame.buffer();
     let (new_w, new_h) = match &desired_size {
         DisplaySize::Width(desired_width) => {
@@ -63,11 +60,10 @@ fn to_resized_buffer(
             let ratio_y = s.rows as f32 / og_h as f32;
             if ratio_x > ratio_y {
                 ((og_w as f32 * ratio_y) as u32 * 2, s.rows as u32 * 2)
-            } else
-            {
+            } else {
                 (s.cols as u32 * 2, (og_h as f32 * ratio_x) as u32 * 2)
             }
-        },
+        }
     };
     resize(original_buffer, new_w, new_h, FilterType::Lanczos3)
 }
