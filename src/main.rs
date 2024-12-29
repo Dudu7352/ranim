@@ -17,6 +17,8 @@ fn main() {
     let args = DisplayArgs::parse();
     let desired_size = if let Some(desired_width) = args.width {
         DisplaySize::Width(desired_width)
+    } else if args.fit {
+        DisplaySize::Fit
     } else {
         DisplaySize::Fill
     };
@@ -25,7 +27,7 @@ fn main() {
         clean();
         exit(0);
     });
-
+    
     let file_in = BufReader::new(File::open(&args.file).unwrap());
     let decoder = GifDecoder::new(file_in).unwrap();
     let frames = decoder.into_frames();

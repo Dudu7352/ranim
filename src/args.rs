@@ -10,6 +10,10 @@ pub struct DisplayArgs {
     #[arg(short = 'W', long)]
     pub width: Option<u32>,
 
+    /// Fit animation to the terminal screen
+    #[arg(long, conflicts_with = "width")]
+    pub fit: bool,
+
     /// Loops animation infinitely, press Ctrl-C to escape
     #[arg(long = "loop")]
     pub loop_animation: bool,
@@ -22,4 +26,5 @@ pub struct DisplayArgs {
 pub enum DisplaySize {
     Width(u32),
     Fill,
+    Fit
 }

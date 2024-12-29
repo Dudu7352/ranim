@@ -40,7 +40,7 @@ pub fn render_line(
     line
 }
 
-pub fn to_resized_buffer(
+fn to_resized_buffer(
     frame: Frame,
     desired_size: &DisplaySize,
 ) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
@@ -56,6 +56,18 @@ pub fn to_resized_buffer(
             let s = termsize::get().unwrap();
             (s.cols as u32, (s.rows * 2 - 1) as u32)
         }
+        DisplaySize::Fit => {
+            let s = termsize::get().unwrap();
+            let (og_w, og_h) = original_buffer.dimensions();
+            let ratio_x = s.cols as f32 / og_w as f32;
+            let ratio_y = s.rows as f32 / og_h as f32;
+            if ratio_x > ratio_y {
+                ((og_w as f32 * ratio_y) as u32 * 2, s.rows as u32 * 2)
+            } else
+            {
+                (s.cols as u32 * 2, (og_h as f32 * ratio_x) as u32 * 2)
+            }
+        },
     };
     resize(original_buffer, new_w, new_h, FilterType::Lanczos3)
 }
