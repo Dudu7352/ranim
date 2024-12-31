@@ -5,7 +5,7 @@
 ## Features
 
 - **Display GIFs in terminal**: Showcase your favorite animations right in the terminal.
-- **Customizable dimensions**: Set custom widths, fit the animation to your terminal size (be default tool fills the entirety of the screen).
+- **Customizable dimensions**: Set custom widths, fit the animation to your terminal size (by default tool fills the entirety of the screen).
 - **Infinite looping**: Enjoy GIFs endlessly with loop support.
 - **Centered display**: Optionally center animations for a cleaner look.
 
