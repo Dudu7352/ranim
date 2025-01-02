@@ -51,7 +51,7 @@ fn to_resized_buffer(frame: Frame, desired_size: &DisplaySize) -> ImageBuffer<Rg
         }
         DisplaySize::Fill => {
             let s = termsize::get().unwrap();
-            (s.cols as u32, (s.rows * 2 - 1) as u32)
+            (s.cols as u32, (s.rows * 2) as u32)
         }
         DisplaySize::Fit => {
             let s = termsize::get().unwrap();
