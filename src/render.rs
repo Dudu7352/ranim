@@ -43,11 +43,21 @@ pub fn render_line(
 fn to_resized_buffer(frame: Frame, desired_size: &DisplaySize) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
     let original_buffer = frame.buffer();
     let (new_w, new_h) = match &desired_size {
-        DisplaySize::Width(desired_width) => {
-            let desired_height = ((original_buffer.height() as f32
-                / original_buffer.width() as f32)
-                * *desired_width as f32) as u32;
-            (*desired_width, desired_height)
+        DisplaySize::Size(opt_width, opt_height) => {
+            let desired_width;
+            let desired_height;
+            if opt_width.is_some() {
+                desired_width = opt_width.unwrap();
+                desired_height = opt_height.unwrap_or(
+                    ((original_buffer.height() as f32 / original_buffer.width() as f32)
+                        * desired_width as f32) as u32,
+                );
+            } else {
+                desired_height = opt_height.unwrap();
+                desired_width = ((original_buffer.width() as f32 / original_buffer.height() as f32)
+                    * desired_height as f32) as u32;
+            }
+            (desired_width, desired_height)
         }
         DisplaySize::Fill => {
             let s = termsize::get().unwrap();
@@ -166,7 +176,7 @@ mod test {
             Delay::from_saturating_duration(Duration::from_millis(20)),
         );
 
-        let res = render_frame(frame, &DisplaySize::Width(3));
+        let res = render_frame(frame, &DisplaySize::Size(Some(3), None));
         let exp = vec![
             "\x1b[38;2;0;0;0m\x1b[48;2;1;1;1m▀▀▀\x1b[0m".to_string(),
             "\x1b[38;2;2;2;2m▀▀▀\x1b[0m".to_string(),
@@ -187,7 +197,7 @@ mod test {
             Delay::from_saturating_duration(Duration::from_millis(20)),
         );
 
-        let res = render_frame(frame, &DisplaySize::Width(1));
+        let res = render_frame(frame, &DisplaySize::Size(Some(1), None));
         let exp = vec![
             "\x1b[38;2;0;0;0m\x1b[48;2;1;1;1m▀\x1b[0m".to_string(),
             "\x1b[38;2;2;2;2m\x1b[48;2;3;3;3m▀\x1b[0m".to_string(),

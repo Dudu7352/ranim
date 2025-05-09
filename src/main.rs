@@ -15,19 +15,19 @@ mod types;
 
 fn main() {
     let args = DisplayArgs::parse();
-    let desired_size = if let Some(desired_width) = args.width {
-        DisplaySize::Width(desired_width)
-    } else if args.fit {
+    let desired_size = if args.fit {
         DisplaySize::Fit
-    } else {
+    } else if args.width.is_none() && args.height.is_none() {
         DisplaySize::Fill
+    } else {
+        DisplaySize::Size(args.width, args.height)
     };
 
     let _ = ctrlc::set_handler(|| {
         clean();
         exit(0);
     });
-    
+
     let file_in = BufReader::new(File::open(&args.file).unwrap());
     let decoder = GifDecoder::new(file_in).unwrap();
     let frames = decoder.into_frames();

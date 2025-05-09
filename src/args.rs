@@ -6,12 +6,16 @@ pub struct DisplayArgs {
     /// GIF file to display
     pub file: String,
 
-    /// Width to display. Without this flag GIF will be stretched to fill the screen
+    /// Width to display.
     #[arg(short = 'W', long)]
     pub width: Option<u32>,
 
+    /// Height to display.
+    #[arg(short = 'H', long)]
+    pub height: Option<u32>,
+
     /// Fit animation to the terminal screen
-    #[arg(long, conflicts_with = "width")]
+    #[arg(long, conflicts_with = "width", conflicts_with = "height")]
     pub fit: bool,
 
     /// Loops animation infinitely, press Ctrl-C to escape
@@ -24,7 +28,7 @@ pub struct DisplayArgs {
 }
 
 pub enum DisplaySize {
-    Width(u32),
+    Size(Option<u32>, Option<u32>),
     Fill,
-    Fit
+    Fit,
 }
