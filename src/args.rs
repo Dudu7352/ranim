@@ -14,6 +14,10 @@ pub struct DisplayArgs {
     #[arg(short = 'H', long)]
     pub height: Option<u32>,
 
+    /// Text to display next to the gif.
+    #[arg(short, long)]
+    pub text: Option<String>,
+
     /// Fit animation to the terminal screen
     #[arg(long, conflicts_with = "width", conflicts_with = "height")]
     pub fit: bool,

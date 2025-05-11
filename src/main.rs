@@ -1,14 +1,14 @@
 use std::{fs::File, io::BufReader, process::exit};
 
+use animation::Animation;
 use args::{DisplayArgs, DisplaySize};
 use clap::Parser;
-use display::{clean, display_anim};
 use image::{codecs::gif::GifDecoder, AnimationDecoder};
 use render::render_frame;
 use types::StrFrame;
 
+mod animation;
 mod args;
-mod display;
 mod render;
 mod terminal_consts;
 mod types;
@@ -24,7 +24,7 @@ fn main() {
     };
 
     let _ = ctrlc::set_handler(|| {
-        clean();
+        Animation::clean();
         exit(0);
     });
 
@@ -34,5 +34,7 @@ fn main() {
     let generated: Vec<StrFrame> = frames
         .map(|f| render_frame(f.unwrap(), &desired_size))
         .collect();
-    display_anim(generated, &args);
+    let mut anim = Animation::new(args, generated);
+    anim.display();
+    // display_anim(generated, &args);
 }
