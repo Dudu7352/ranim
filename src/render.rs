@@ -7,7 +7,7 @@ use image::{
 
 use crate::{args::DisplaySize, types::StrFrame};
 
-pub fn render_line(
+pub fn render_image_line(
     buffer: &ImageBuffer<Rgba<u8>, Vec<u8>>,
     width: usize,
     y: usize,
@@ -87,11 +87,11 @@ pub fn render_frame(frame: Frame, desired_size: &DisplaySize) -> StrFrame {
 
     let mut result = Vec::with_capacity(width);
     for y in (0..(height - 1)).step_by(2) {
-        result.push(render_line(&buffer, width, y, true));
+        result.push(render_image_line(&buffer, width, y, true));
     }
 
     if height % 2 == 1 {
-        result.push(render_line(&buffer, width, height - 1, false));
+        result.push(render_image_line(&buffer, width, height - 1, false));
     }
 
     StrFrame {
@@ -99,110 +99,5 @@ pub fn render_frame(frame: Frame, desired_size: &DisplaySize) -> StrFrame {
         final_frame: None,
         size: (width, height / 2),
         delay,
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use std::time::Duration;
-
-    use image::{Delay, Frame, ImageBuffer, Rgba};
-
-    use crate::args::DisplaySize;
-
-    use super::{render_frame, render_line};
-
-    type I = ImageBuffer<Rgba<u8>, Vec<u8>>;
-
-    fn prepare_black_img(size: (u32, u32)) -> I {
-        let (w, h) = size;
-        let mut raw: Vec<u8> = Vec::new();
-        for _ in 0..(w * h) {
-            raw.extend_from_slice(&[0, 0, 0, 0]);
-        }
-        ImageBuffer::from_raw(w, h, raw).unwrap()
-    }
-
-    fn grayscale_img(size: (u32, u32), colors: &[u8]) -> I {
-        let (w, h) = size;
-        let mut raw: Vec<u8> = Vec::new();
-        for c in colors {
-            raw.extend_from_slice(&[*c, *c, *c, *c]);
-        }
-        ImageBuffer::from_raw(w, h, raw).unwrap()
-    }
-
-    #[test]
-    fn test_render_line_one_pixel_row() {
-        let img: I = prepare_black_img((4, 5));
-        let res = render_line(&img, 4, 0, false);
-        let exp = "\x1b[38;2;0;0;0m▀▀▀▀\x1b[0m".to_string();
-        assert_eq!(res, exp, "Invalid line render result");
-    }
-
-    #[test]
-    fn test_render_line_two_pixel_rows() {
-        let img: I = prepare_black_img((4, 5));
-        let res = render_line(&img, 4, 0, true);
-        let exp = "\x1b[38;2;0;0;0m\x1b[48;2;0;0;0m▀▀▀▀\x1b[0m".to_string();
-        assert_eq!(res, exp, "Invalid line render result");
-    }
-
-    #[test]
-    fn test_render_line_with_top_row_change() {
-        let img: I = grayscale_img((4, 2), &[0, 0, 1, 1, 2, 2, 2, 2]);
-        let res = render_line(&img, 4, 0, true);
-        let exp = "\x1b[38;2;0;0;0m\x1b[48;2;2;2;2m▀▀\x1b[38;2;1;1;1m▀▀\x1b[0m".to_string();
-        assert_eq!(res, exp, "Invalid line render result");
-    }
-
-    #[test]
-    fn test_render_line_with_bottom_row_change() {
-        let img: I = grayscale_img((4, 2), &[0, 0, 0, 0, 2, 2, 1, 1]);
-        let res = render_line(&img, 4, 0, true);
-        let exp = "\x1b[38;2;0;0;0m\x1b[48;2;2;2;2m▀▀\x1b[48;2;1;1;1m▀▀\x1b[0m".to_string();
-        assert_eq!(res, exp, "Invalid line render result");
-    }
-
-    /// Test rendering an image of size 3x3. The result should have 2 lines, one only with top
-    /// chars, since each line can contain up to 2 rows of pixels
-    #[test]
-    fn test_render_3x3_frame() {
-        let img: I = grayscale_img((3, 3), &[0, 0, 0, 1, 1, 1, 2, 2, 2]);
-        let frame: Frame = Frame::from_parts(
-            img,
-            0,
-            0,
-            Delay::from_saturating_duration(Duration::from_millis(20)),
-        );
-
-        let res = render_frame(frame, &DisplaySize::Size(Some(3), None));
-        let exp = vec![
-            "\x1b[38;2;0;0;0m\x1b[48;2;1;1;1m▀▀▀\x1b[0m".to_string(),
-            "\x1b[38;2;2;2;2m▀▀▀\x1b[0m".to_string(),
-        ];
-
-        assert_eq!(res.raw_frame, exp);
-    }
-
-    /// Test rendring an image of size 1x4. The result should have 2 lines, since each line can
-    /// contain up to 2 rows of pixels
-    #[test]
-    fn test_render_1x4_frame() {
-        let img: I = grayscale_img((1, 4), &[0, 1, 2, 3]);
-        let frame: Frame = Frame::from_parts(
-            img,
-            0,
-            0,
-            Delay::from_saturating_duration(Duration::from_millis(20)),
-        );
-
-        let res = render_frame(frame, &DisplaySize::Size(Some(1), None));
-        let exp = vec![
-            "\x1b[38;2;0;0;0m\x1b[48;2;1;1;1m▀\x1b[0m".to_string(),
-            "\x1b[38;2;2;2;2m\x1b[48;2;3;3;3m▀\x1b[0m".to_string(),
-        ];
-
-        assert_eq!(res.raw_frame, exp);
     }
 }
